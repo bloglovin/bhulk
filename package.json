@@ -1,0 +1,36 @@
+{
+  "name": "bhulk",
+  "version": "0.1.0",
+  "description": "Batch request handling plugin for hapi",
+  "main": "index.js",
+  "scripts": {
+    "test": "node_modules/.bin/istanbul cover node_modules/.bin/_mocha -- --ui tdd -R spec --inline-diffs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/bloglovin/bhulk.git"
+  },
+  "keywords": [
+    "bulk",
+    "batch",
+    "hapi"
+  ],
+  "author": "Hugo Wetterberg <hugo@wetterberg.nu>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bloglovin/bhulk/issues"
+  },
+  "homepage": "https://github.com/bloglovin/bhulk",
+  "dependencies": {
+    "async": "^0.2.10",
+    "lodash": "^2.4.1",
+    "JSONPath": "^0.10.0"
+  },
+  "devDependencies": {
+    "assert": "^1.1.1",
+    "mocha": "^1.18.2",
+    "istanbul": "^0.2.6",
+    "hapi": "^3.0.2",
+    "request": "^2.34.0"
+  }
+}
