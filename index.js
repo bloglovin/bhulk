@@ -110,7 +110,7 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
         url: url,
         credentials: bulkRequest.auth.credentials
       }, function handleReply(reply) {
-        if (reply.isBoom) {
+        if (reply && reply.isBoom) {
           reply = reply.output.payload;
         }
         callback(null, reply);
