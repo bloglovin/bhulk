@@ -39,10 +39,10 @@ lib.async.auto({
     // inside bhulk.
     serverOne.pack.register({
       name: 'bhulk',
-      version: '0.0.0',
-      register: lib.bhulk.register
-    }, {
-      remote: handleRemoteRequest
+      plugin: lib.bhulk,
+      options: {
+        remote: handleRemoteRequest
+      }
     }, callback);
   },
   // Start server one
