@@ -30,14 +30,17 @@ A sample use of Bhulk (the query parameters as json for easier reading):
   "stories": "/collections/5/stories?fields=entityId,entityType,addedBy",
   "posts": "/posts?ids=${,}&fields=title,url",
   "posts.source": "stories",
-  "posts.query": "$.[?(@.entityType=='post')].entityId",
+  "posts.query": ".[*](eq(@.entityType, 'post')).entityId",
   "authors": "/users?ids=${,}",
   "authors.source": "stories",
-  "authors.query": "$.*.addedBy"
+  "authors.query": ".*.addedBy",
+  "_debug": "true"
 }
 ```
 
-All requests in Bhulk are named here we have "stories", "posts", and "authors". A request can have a `source`, which is a dependency on another request, whose result then can be used to build the request. The what values to select from the sources result is determined by the `query`, which is a [JSONPath](https://www.npmjs.org/package/JSONPath) expression. So in the above exaple the "posts" request has "stories" and a `source` and it will take all "entityId" values from objects in the result that have an "entityType" that matches 'post'. The `${,}` placeholder in the "posts" url "/posts?ids=${,}&fields=title,url,content,image" will be replaced with the unique values from the JSONPath query, separated by comma. So the actual request that will be made could look something like this: "/posts?ids=123,234&fields=title,url,content,image".
+All requests in Bhulk are named here we have "stories", "posts", and "authors". A request can have a `source`, which is a dependency on another request, whose result then can be used to build the request. The what values to select from the sources result is determined by the `query`, which is an [OBPath](https://www.npmjs.org/package/obpath.js) expression. So in the above exaple the "posts" request has "stories" and a `source` and it will take all "entityId" values from objects in the result that have an "entityType" that matches 'post'. The `${,}` placeholder in the "posts" url "/posts?ids=${,}&fields=title,url,content,image" will be replaced with the unique values from the JSONPath query, separated by comma. So the actual request that will be made could look something like this: "/posts?ids=123,234&fields=title,url,content,image". It's also possible to suppress the results of requests with a suppress parameter, for stories that would look like this: "stories.suppress=true".
+
+The "_debug" parameter causes bhulk to output metadata about the requests; how they are interpreted and what the final url resolves to.
 
 Requests will be executed in parallel when possible. The "posts" and "authors" requests in the above example will both be made as soon as their `source` request has finished.
 
@@ -53,13 +56,13 @@ The result will look like this:
       "posts": {
         "url": "/posts?ids=${,}&fields=title,url",
         "source": "stories",
-        "query": "$.[?(@.entityType=='post')].entityId",
+        "query": ".[*](eq(@.entityType, 'post')).entityId",
         "realUrl": "/posts?ids=123,234&fields=title,url"
       },
       "authors": {
         "url": "/users?ids=${,}",
         "source": "stories",
-        "query": "$.result.*.addedBy",
+        "query": ".*.addedBy",
         "realUrl": "/users?ids=1001"
       }
     }

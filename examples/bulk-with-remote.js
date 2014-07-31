@@ -78,11 +78,11 @@ function makeRequest(callback) {
       'listing': '/listing',
       'entities': '/entities?ids=${,}',
       'entities.source': 'listing',
-      'entities.query': '$.*.id',
+      'entities.query': '.*.id',
       'authors': '/users?ids=${,}',
       'authors.remote': 'two',
       'authors.source': 'entities',
-      'authors.query': '$.*.by'
+      'authors.query': '.*.by'
     }
   }, function requestResult(error, request, result) {
     callback(error, result);

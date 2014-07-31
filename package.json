@@ -1,6 +1,6 @@
 {
   "name": "bhulk",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "description": "Batch request handling plugin for hapi",
   "main": "index.js",
   "scripts": {
@@ -24,7 +24,7 @@
   "dependencies": {
     "async": "^0.2.10",
     "lodash": "^2.4.1",
-    "JSONPath": "^0.10.0"
+    "obpath.js": "^0.1.0"
   },
   "devDependencies": {
     "mocha": "^1.18.2",

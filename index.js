@@ -3,7 +3,7 @@
 
 var lib = {
   async: require('async'),
-  jsonPath: require('JSONPath'),
+  obpath: require('obpath.js'),
   lodash: require('lodash')
 };
 var _ = lib.lodash;
@@ -11,31 +11,9 @@ var _ = lib.lodash;
 function Bhulk(hapi, config) {
   this.hapi = hapi;
   this.config = config;
+  this.obpathContext = lib.obpath.createContext();
+  this.queryCache = {};
 }
-
-Bhulk.register = function (plugin, options, next) {
-  var config = {
-    path: '/bulk',
-    routeConfig: {
-      description: 'Bulk request',
-      notes: 'Performs multiple requests'
-    },
-    remote: null
-  };
-  if (options) {
-    _.merge(config, options);
-  }
-
-  var bulk = new Bhulk(plugin.hapi, config);
-  plugin.route({
-    method: 'GET',
-    path: config.path,
-    handler: bulk.bulkRequest.bind(bulk),
-    config: config.routeConfig
-  });
-
-  next();
-};
 
 Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
   var bulkResult = {
@@ -46,6 +24,8 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
   var remoteHandler = this.config.remote;
 
   for (var key in bulkRequest.query) {
+    if (key.substr(0,1) === '_') continue;
+
     var segments = key.split('.');
     var value = bulkRequest.query[key];
     var request = requests[segments[0]] = requests[segments[0]] || {};
@@ -57,8 +37,21 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
       if (segments[1] == 'source') {
         request.source = value;
       }
+      else if (segments[1] == 'suppress') {
+        if (value === 'true') {
+          request.suppress = true;
+        }
+      }
       else if (segments[1] == 'query') {
-        request.query = value;
+        if (!this.queryCache[value]) {
+          try {
+            this.queryCache[value] = lib.obpath.mustCompile(value, this.obpathContext);
+          } catch (syntaxError) {
+            reply(hapi.error.badRequest('Bad path expression in "' + key + '": ' + syntaxError.message));
+            return;
+          }
+        }
+        request.query = this.queryCache[value];
       }
       else if (segments[1] == 'remote') {
         request.remote = value;
@@ -87,11 +80,7 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
     var url = requestSpec.url;
     if (requestSpec.source && requestSpec.query) {
       var data = sources[requestSpec.source];
-
-      // Jshint thinks that the jsonPath.eval is a JavaScript eval.
-      // jshint -W061
-      var params = lib.jsonPath.eval(data, requestSpec.query);
-      // jshint +W061
+      var params = requestSpec.query.evaluate(data);
 
       url = requestSpec.url.replace(urlReplacement, function(match, placeholder) {
         return replace(placeholder, params);
@@ -151,8 +140,26 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
       return;
     }
 
-    bulkResult.meta.requests = requests;
-    bulkResult.results = results;
+    // Add debugging info
+    if (bulkRequest.query._debug === 'true') {
+      // Restore the path expressions
+      for (var key in requests) {
+        if (requests[key].query) {
+          requests[key].query = requests[key].query.path;
+        }
+      }
+
+      bulkResult.meta.requests = requests;
+    }
+
+    bulkResult.results = {};
+
+    // Add the non-suppressed results
+    for (var key in results) {
+      if (!requests[key].suppress) {
+        bulkResult.results[key] = results[key];
+      }
+    }
 
     reply(bulkResult);
   });
@@ -179,4 +186,27 @@ Bhulk.prototype.validateTree = function (requests) {
   return null;
 };
 
-module.exports = Bhulk;
+exports.pkg = require('./package.json');
+exports.register = function (plugin, options, next) {
+  var config = {
+    path: '/bulk',
+    routeConfig: {
+      description: 'Bulk request',
+      notes: 'Performs multiple requests'
+    },
+    remote: null
+  };
+  if (options) {
+    _.merge(config, options);
+  }
+
+  var bulk = new Bhulk(plugin.hapi, config);
+  plugin.route({
+    method: 'GET',
+    path: config.path,
+    handler: bulk.bulkRequest.bind(bulk),
+    config: config.routeConfig
+  });
+
+  next();
+};
