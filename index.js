@@ -22,6 +22,7 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
   var hapi = this.hapi;
   var requests = {};
   var remoteHandler = this.config.remote;
+  var iterationLimit = this.config.iterationLimit || 10;
 
   for (var key in bulkRequest.query) {
     if (key.substr(0,1) === '_') continue;
@@ -36,6 +37,11 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
     else if (segments.length == 2) {
       if (segments[1] == 'source') {
         request.source = value;
+      }
+      else if (segments[1] == 'each') {
+        if (value === 'true') {
+          request.each = true;
+        }
       }
       else if (segments[1] == 'suppress') {
         if (value === 'true') {
@@ -73,23 +79,84 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
     if (placeholder == ',') {
       value = _.uniq(params).join(placeholder);
     }
-    return encodeURIComponent(value);
+    if (placeholder == '.') {
+      value = params.toString();
+    }
+    return encodeURIComponent(value.toString());
   }
 
   function requestWorker(requestSpec, callback, sources) {
-    var url = requestSpec.url;
-    if (requestSpec.source && requestSpec.query) {
-      var data = sources[requestSpec.source];
-      var params = requestSpec.query.evaluate(data);
+    if (!requestSpec.each) {
+      var url = requestSpec.url;
+      if (requestSpec.source && requestSpec.query) {
+        var data = sources[requestSpec.source];
+        var params = requestSpec.query.evaluate(data);
 
-      url = requestSpec.url.replace(urlReplacement, function(match, placeholder) {
-        return replace(placeholder, params);
-      });
-      if (url != requestSpec.url) {
-        requestSpec.realUrl = url;
+        url = requestSpec.url.replace(urlReplacement, function(match, placeholder) {
+          return replace(placeholder, params);
+        });
+        if (url != requestSpec.url) {
+          requestSpec.realUrl = url;
+        }
+      }
+
+      performRequest(requestSpec, url, callback);
+    }
+    else {
+      if (requestSpec.source && requestSpec.query) {
+        var data = sources[requestSpec.source];
+        var params = requestSpec.query.evaluate(data);
+        requestSpec.realUrls = [];
+
+        if (params.length === 0) {
+          return callback(null, {});
+        }
+        // We limit the number of request iterations we allow.
+        else if (params.length > iterationLimit) {
+          requestSpec.skippedUrls = params.slice(iterationLimit).map(function mapUrl(item, callback) {
+            return requestSpec.url.replace(urlReplacement, function(match, placeholder) {
+              return replace(placeholder, item);
+            });
+          });
+          params = params.slice(0, iterationLimit);
+        }
+
+        var queue = lib.async.queue(function eachJob(item, callback) {
+          var url = requestSpec.url.replace(urlReplacement, function(match, placeholder) {
+            return replace(placeholder, item);
+          });
+          requestSpec.realUrls.push(url);
+
+          performRequest(requestSpec, url, function resultPair(err, result) {
+            var pair = {
+              from: item,
+            };
+            if (err) {
+              pair.error = err;
+            }
+            else if (result) {
+              pair.result = result;
+            }
+            callback(null, pair);
+          });
+        }, 3);
+
+        var results = [];
+        queue.push(params, function (err, result) {
+          results.push(result);
+        });
+
+        queue.drain = function queueDone() {
+          callback(null, results);
+        };
+      }
+      else {
+        callback(new Error('Iteration requests must have a source and query'));
       }
     }
+  }
 
+  function performRequest(requestSpec, url, callback) {
     if (requestSpec.remote) {
       if (typeof remoteHandler !== 'function') {
         callback(new Error('This endpoint doesn\'t support remote requests'));
