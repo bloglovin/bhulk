@@ -25,30 +25,30 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
   var iterationLimit = this.config.iterationLimit || 10;
 
   for (var key in bulkRequest.query) {
-    if (key.substr(0,1) === '_') continue;
+    if (key.substr(0,1) === '_') { continue; }
 
     var segments = key.split('.');
     var value = bulkRequest.query[key];
     var request = requests[segments[0]] = requests[segments[0]] || {};
 
-    if (segments.length == 1) {
+    if (segments.length === 1) {
       request.url = value;
     }
-    else if (segments.length == 2) {
-      if (segments[1] == 'source') {
+    else if (segments.length === 2) {
+      if (segments[1] === 'source') {
         request.source = value;
       }
-      else if (segments[1] == 'each') {
+      else if (segments[1] === 'each') {
         if (value === 'true') {
           request.each = true;
         }
       }
-      else if (segments[1] == 'suppress') {
+      else if (segments[1] === 'suppress') {
         if (value === 'true') {
           request.suppress = true;
         }
       }
-      else if (segments[1] == 'query') {
+      else if (segments[1] === 'query') {
         if (!this.queryCache[value]) {
           try {
             this.queryCache[value] = lib.obpath.mustCompile(value, this.obpathContext);
@@ -59,7 +59,7 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
         }
         request.query = this.queryCache[value];
       }
-      else if (segments[1] == 'remote') {
+      else if (segments[1] === 'remote') {
         request.remote = value;
       }
     }
@@ -76,26 +76,28 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
   var urlReplacement = /\$\{([^}])\}/;
   function replace(placeholder, params) {
     var value = '';
-    if (placeholder == ',') {
+    if (placeholder === ',') {
       value = _.uniq(params).join(placeholder);
     }
-    if (placeholder == '.') {
+    if (placeholder === '.') {
       value = params.toString();
     }
     return encodeURIComponent(value.toString());
   }
 
   function requestWorker(requestSpec, callback, sources) {
+    var data, params;
+
     if (!requestSpec.each) {
       var url = requestSpec.url;
       if (requestSpec.source && requestSpec.query) {
-        var data = sources[requestSpec.source];
-        var params = requestSpec.query.evaluate(data);
+        data = sources[requestSpec.source];
+        params = requestSpec.query.evaluate(data);
 
         url = requestSpec.url.replace(urlReplacement, function(match, placeholder) {
           return replace(placeholder, params);
         });
-        if (url != requestSpec.url) {
+        if (url !== requestSpec.url) {
           requestSpec.realUrl = url;
         }
       }
@@ -104,8 +106,8 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
     }
     else {
       if (requestSpec.source && requestSpec.query) {
-        var data = sources[requestSpec.source];
-        var params = requestSpec.query.evaluate(data);
+        data = sources[requestSpec.source];
+        params = requestSpec.query.evaluate(data);
         requestSpec.realUrls = [];
 
         if (params.length === 0) {
@@ -113,7 +115,7 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
         }
         // We limit the number of request iterations we allow.
         else if (params.length > iterationLimit) {
-          requestSpec.skippedUrls = params.slice(iterationLimit).map(function mapUrl(item, callback) {
+          requestSpec.skippedUrls = params.slice(iterationLimit).map(function mapUrl(item) {
             return requestSpec.url.replace(urlReplacement, function(match, placeholder) {
               return replace(placeholder, item);
             });
@@ -222,9 +224,9 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
     bulkResult.results = {};
 
     // Add the non-suppressed results
-    for (var key in results) {
-      if (!requests[key].suppress) {
-        bulkResult.results[key] = results[key];
+    for (var rkey in results) {
+      if (!requests[rkey].suppress) {
+        bulkResult.results[rkey] = results[rkey];
       }
     }
 
