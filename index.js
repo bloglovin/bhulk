@@ -1,17 +1,15 @@
 /* jshint node: true */
 'use strict';
 
-var lib = {
-  async: require('async'),
-  obpath: require('obpath.js'),
-  lodash: require('lodash')
-};
-var _ = lib.lodash;
+var mod_async = require('async');
+var mod_obpath = require('obpath.js');
+
+var _ = require('lodash');
 
 function Bhulk(hapi, config) {
   this.hapi = hapi;
   this.config = config;
-  this.obpathContext = lib.obpath.createContext();
+  this.obpathContext = mod_obpath.createContext();
   this.queryCache = {};
 }
 
@@ -51,7 +49,7 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
       else if (segments[1] === 'query') {
         if (!this.queryCache[value]) {
           try {
-            this.queryCache[value] = lib.obpath.mustCompile(value, this.obpathContext);
+            this.queryCache[value] = mod_obpath.mustCompile(value, this.obpathContext);
           } catch (syntaxError) {
             reply(hapi.error.badRequest('Bad path expression in "' + key + '": ' + syntaxError.message));
             return;
@@ -123,7 +121,7 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
           params = params.slice(0, iterationLimit);
         }
 
-        var queue = lib.async.queue(function eachJob(item, callback) {
+        var queue = mod_async.queue(function eachJob(item, callback) {
           var url = requestSpec.url.replace(urlReplacement, function(match, placeholder) {
             return replace(placeholder, item);
           });
@@ -203,7 +201,7 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
   }
 
 
-  lib.async.auto(tasks, function(error, results) {
+  mod_async.auto(tasks, function(error, results) {
     if (error) {
       reply(hapi.error.badRequest(error.message));
       return;
