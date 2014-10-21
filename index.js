@@ -253,7 +253,6 @@ Bhulk.prototype.validateTree = function (requests) {
   return null;
 };
 
-exports.pkg = require('./package.json');
 exports.register = function (plugin, options, next) {
   var config = {
     path: '/bulk',
@@ -276,4 +275,8 @@ exports.register = function (plugin, options, next) {
   });
 
   next();
+};
+
+exports.register.attributes = {
+  pkg: require('./package'),
 };
