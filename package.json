@@ -26,7 +26,7 @@
   "dependencies": {
     "async": "^0.2.10",
     "lodash": "^2.4.1",
-    "obpath.js": "^0.1.0"
+    "obpath.js": "^1.0.0"
   },
   "devDependencies": {
     "hapi": "^6.2.1",
