@@ -1,3 +1,11 @@
+### 1.1.2 (2014-10-22)
+
+
+#### Bug Fixes
+
+* **obpath:** updated obpath.js to 1.x ([95967f6e](https://github.com/bloglovin/bhulk/commit/95967f6e4a860b1951a7e7f7b48aa344247ebea0))
+
+
 ### 1.1.1 (2014-10-21)
 
 
