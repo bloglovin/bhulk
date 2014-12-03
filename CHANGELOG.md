@@ -1,3 +1,11 @@
+### 1.1.3 (2014-12-03)
+
+
+#### Bug Fixes
+
+* **main:** set a request name ([e53bb981](https://github.com/bloglovin/bhulk/commit/e53bb9818bb24ba5dc6a0d17f90dbfd09d06a31a))
+
+
 ### 1.1.2 (2014-10-22)
 
 
