@@ -30,6 +30,7 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
     var request = requests[segments[0]] = requests[segments[0]] || {};
 
     if (segments.length === 1) {
+      request.name = segments[0];
       request.url = value;
     }
     else if (segments.length === 2) {
@@ -163,6 +164,7 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
         return;
       }
       remoteHandler(requestSpec.remote, {
+        name: requestSpec.name,
         url: url,
         credentials: bulkRequest.auth.credentials
       }, function handleReply(reply) {
