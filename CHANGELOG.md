@@ -1,3 +1,11 @@
+## 1.2.0 (2015-01-19)
+
+
+#### Features
+
+* **main:** detect errors and empty results ([c376b58e](https://github.com/bloglovin/bhulk/commit/c376b58e1f935f9ebfc8d71b23c6cac396d05730))
+
+
 ### 1.1.3 (2014-12-03)
 
 
