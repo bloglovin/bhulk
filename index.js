@@ -87,12 +87,40 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
   function requestWorker(requestSpec, callback, sources) {
     var data, params;
 
+    if (requestSpec.source && requestSpec.query) {
+      data = sources[requestSpec.source];
+
+      // Check if the source request was successful
+      if (requestSpec.source && (!data || (data.error && data.statusCode))) {
+        if (data.statusCode === 412) {
+          return callback(null, {
+            error: 'Dependency Failure',
+            statusCode: 412,
+            message: 'Skipping request as the source request was skipped',
+          });
+        } else if (data.statusCode >= 400) {
+          return callback(null, {
+            error: 'Dependency Failure',
+            statusCode: 412,
+            message: 'Skipping request as the source request failed',
+          });
+        }
+      }
+
+      params = requestSpec.query.evaluate(data);
+      if (!params || params.length === 0) {
+        return callback(null, {
+          error: 'Dependency Failure',
+          statusCode: 412,
+          message: 'Skipping request as the source query didn\'t return any results',
+        });
+      }
+    }
+
     if (!requestSpec.each) {
       var url = requestSpec.url;
-      if (requestSpec.source && requestSpec.query) {
-        data = sources[requestSpec.source];
-        params = requestSpec.query.evaluate(data);
 
+      if (params) {
         url = requestSpec.url.replace(urlReplacement, function(match, placeholder) {
           return replace(placeholder, params);
         });
@@ -104,9 +132,7 @@ Bhulk.prototype.bulkRequest = function (bulkRequest, reply) {
       performRequest(requestSpec, url, callback);
     }
     else {
-      if (requestSpec.source && requestSpec.query) {
-        data = sources[requestSpec.source];
-        params = requestSpec.query.evaluate(data);
+      if (params) {
         requestSpec.realUrls = [];
 
         if (params.length === 0) {
